@@ -1,6 +1,8 @@
 <div align="center">
 
-<h1>Prompt Injection and Jailbreaking </h1>
+<h1>🤖 Prompt Injection and Jailbreaking </h1>
+
+A repository containing the source code for the prompt injection and jailbreaking course project
 
 Current version: 1.0
 
