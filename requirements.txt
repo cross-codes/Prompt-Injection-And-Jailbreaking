@@ -1,0 +1,10 @@
+rebuff
+pytector[gguf]
+jailbreakbench
+jailbreakeval
+prompt-injection-bench
+vanna
+plotly
+torch
+numpy
+langchain
