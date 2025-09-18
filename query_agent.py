@@ -35,10 +35,11 @@ class QueryAgent:
 
         return prompt
 
-    def query(self, query: str, history: bool = False) -> str | None:
+    def query(self, query: str, history: bool = False) -> str:
         prompt: str = self._generate_query(query, history)
         response: str = self.llm.invoke(prompt)
-        self.history_lst.append((query, response))
+        if history:
+            self.history_lst.append((query, response))
         return response
 
     def clear_history(self):
