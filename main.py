@@ -2,12 +2,14 @@ import json, time
 from defence.classifier_cluster import ClassifierCluster
 from metrics import AttackEvaluator, AttackResult, MetricsCalculator
 from defence.heuristic_channel import HeuristicVectorAnalyzer
+from defence.shieldgemma import ShieldGemma2BClassifier
 from query_agent import QueryAgent
 
 if __name__ == "__main__":
     query_agent: QueryAgent = QueryAgent("tinyllama")
     cluster_guard: ClassifierCluster = ClassifierCluster()
     heuristic_guard: HeuristicVectorAnalyzer = HeuristicVectorAnalyzer(3, 3)
+    llm_guard: ShieldGemma2BClassifier = ShieldGemma2BClassifier()
 
     evaluator: AttackEvaluator = AttackEvaluator("tinyllama", 0.1)
     metrics_calc: MetricsCalculator = MetricsCalculator()
@@ -36,7 +38,11 @@ if __name__ == "__main__":
         print("---------------------")
 
         for prompt in prompts:
-            if cluster_guard.is_safe(prompt) and heuristic_guard.is_safe(prompt):
+            if (
+                cluster_guard.is_safe(prompt)
+                and heuristic_guard.is_safe(prompt)
+                and llm_guard.is_safe(prompt)
+            ):
                 start_time: float = time.time()
                 output: str = query_agent.query(prompt)
                 response_time: float = time.time() - start_time
