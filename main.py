@@ -8,6 +8,7 @@ if __name__ == "__main__":
     query_agent: QueryAgent = QueryAgent("tinyllama")
     cluster_guard: ClassifierCluster = ClassifierCluster()
     heuristic_guard: HeuristicVectorAnalyzer = HeuristicVectorAnalyzer(3, 3)
+
     evaluator: AttackEvaluator = AttackEvaluator("tinyllama", 0.1)
     metrics_calc: MetricsCalculator = MetricsCalculator()
 
@@ -19,16 +20,16 @@ if __name__ == "__main__":
         # fmt: off
         data = json.load(fh)  # pyright: ignore[reportAny]
         prompts: list[str] = data["prompts"] # pyright: ignore[reportAny, reportRedeclaration]
-        # for prompt in prompts:
-        #     start_time: float = time.time() # pyright: ignore[reportRedeclaration]
-        #     output: str = query_agent.query(prompt) # pyright: ignore[reportRedeclaration]
-        #     response_time: float = time.time() - start_time # pyright: ignore[reportRedeclaration]
-        #     attack_result: AttackResult = evaluator.evaluate(response_time, output, prompt) # pyright: ignore[reportUnknownMemberType, reportRedeclaration]
-        #
-        #     metrics_calc.add_result(attack_result)
+        for prompt in prompts:
+            start_time: float = time.time() # pyright: ignore[reportRedeclaration]
+            output: str = query_agent.query(prompt) # pyright: ignore[reportRedeclaration]
+            response_time: float = time.time() - start_time # pyright: ignore[reportRedeclaration]
+            attack_result: AttackResult = evaluator.evaluate(response_time, output, prompt) # pyright: ignore[reportUnknownMemberType, reportRedeclaration]
+
+            metrics_calc.add_result(attack_result)
         # fmt: on
-        #
-        # metrics_calc.evaluate()
+
+        metrics_calc.evaluate()
 
         print("---------------------")
         print("With GUARD enabled")
