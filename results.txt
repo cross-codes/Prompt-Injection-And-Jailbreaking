@@ -1,0 +1,52 @@
+Overall
+============================================================
+Generated: 2025-10-14 12:10:09
+
+ATTACK SUCCESS RATE METRICS:
+- Overall ASR: 45.53%
+- Success Percentage: 45.53%
+- Successful Attacks: 326
+- Total Attempts: 1384
+- Attempted Attacks: 716
+- Blocked by Guard: 668
+
+ASR by Attack Type:
+- blocked: 0.00% (668 attacks)
+- unknown: 0.00% (17 attacks)
+- attempted: 46.64% (699 attacks)
+
+TIME-TO-BYPASS METRICS:
+- Average Time: 0.90 seconds
+- Median Time: 0.56 seconds
+- Min Time: 0.07 seconds
+- Max Time: 57.03 seconds
+- Standard Deviation: 3.19 seconds
+- Total Bypass Time: 292.93 seconds
+============================================================
+
+AdvLLM only
+============================================================
+LLM ATTACK SIMULATION RESULTS
+============================================================
+Generated: 2025-10-14 14:01:10
+
+ATTACK SUCCESS RATE METRICS:
+- Overall ASR: 45.65%
+- Success Percentage: 45.65%
+- Successful Attacks: 42
+- Total Attempts: 300
+- Attempted Attacks: 92
+- Blocked by Guard: 208
+
+ASR by Attack Type:
+- blocked: 0.00% (208 attacks)
+- attempted: 45.65% (92 attacks)
+
+TIME-TO-BYPASS METRICS:
+- Average Time: 0.84 seconds
+- Median Time: 0.83 seconds
+- Min Time: 0.19 seconds
+- Max Time: 1.45 seconds
+- Standard Deviation: 0.25 seconds
+- Total Bypass Time: 35.36 seconds
+============================================================
