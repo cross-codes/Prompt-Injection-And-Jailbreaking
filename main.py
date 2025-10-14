@@ -18,6 +18,7 @@ if __name__ == "__main__":
     evaluator: AttackEvaluator = AttackEvaluator("tinyllama", 0.1)
     metrics_calc: MetricsCalculator = MetricsCalculator()
 
+    cnt = 0
     with open("offence/advllm/prompts.json", "r") as fh:
         # fmt: off
         data = json.load(fh)  # pyright: ignore[reportAny]
@@ -41,6 +42,8 @@ if __name__ == "__main__":
             else:
                 failed_result: AttackResult = evaluator.create_failed_attempt(prompt)
                 metrics_calc.add_result(failed_result)
+            print(f'Prompt {cnt} assesed')
+            cnt += 1
 
     with open("offence/emoji/prompts.json", "r") as fh:
         # fmt: off
@@ -65,6 +68,8 @@ if __name__ == "__main__":
             else:
                 failed_result: AttackResult = evaluator.create_failed_attempt(prompt)
                 metrics_calc.add_result(failed_result)
+            print(f'Prompt {cnt} assesed')
+            cnt += 1
 
     with open("offence/regular/prompts.json", "r") as fh:
         # fmt: off
@@ -89,5 +94,7 @@ if __name__ == "__main__":
             else:
                 failed_result: AttackResult = evaluator.create_failed_attempt(prompt)
                 metrics_calc.add_result(failed_result)
+            print(f'Prompt {cnt} assesed')
+            cnt += 1
 
     metrics_calc.evaluate()
