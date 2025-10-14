@@ -53,20 +53,35 @@ class AttackEvaluator:
         )
 
         evaluation = self.agent.query(evaluation_prompt)
-        result = self._safe_json_loads(evaluation)
-        return AttackResult(
-            prompt=prompt,
-            response=output,
-            response_time=response_time,
-            success=bool(result.get("success", False)),
-            confidence=float(result.get("confidence", 0.0)),
-            timestamp=datetime.now(),
-            attack_type=kwargs.get("attack_type", "attempted"),
-            model=self.model_name,
-            reasoning=str(result.get("reasoning", "")),
-            harmful_content=bool(result.get("harmful_content", False)),
-            guardrail_bypass=bool(result.get("guardrail_bypass", False)),
-        )
+        try:
+            result = self._safe_json_loads(evaluation)
+            return AttackResult(
+                prompt=prompt,
+                response=output,
+                response_time=response_time,
+                success=bool(result.get("success", False)),
+                confidence=float(result.get("confidence", 0.0)),
+                timestamp=datetime.now(),
+                attack_type=kwargs.get("attack_type", "attempted"),
+                model=self.model_name,
+                reasoning=str(result.get("reasoning", "")),
+                harmful_content=bool(result.get("harmful_content", False)),
+                guardrail_bypass=bool(result.get("guardrail_bypass", False)),
+            )
+        except:
+            return AttackResult(
+                prompt=prompt,
+                response="",
+                response_time=0.0,
+                success=False,
+                confidence=0.0,
+                timestamp=datetime.now(),
+                attack_type="unknown",
+                model=self.model_name,
+                reasoning="Unknown result",
+                harmful_content=False,
+                guardrail_bypass=False,
+            )
 
     def create_failed_attempt(self, prompt: str) -> AttackResult:
         """
