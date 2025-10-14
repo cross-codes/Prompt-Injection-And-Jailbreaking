@@ -9,14 +9,16 @@ from torch.nn.functional import softmax
 
 
 class ShieldGemma2BClassifier:
-    def __init__(self):
+    def __init__(self, token: str | None):
+        self.access_token: str | None = token
         self.tokenizer: PreTrainedTokenizerFast = AutoTokenizer.from_pretrained(
-            "google/shieldgemma-2b"
+            "google/shieldgemma-2b", token=self.access_token
         )
         self.model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
             "google/shieldgemma-2b",
             device_map="auto",
             torch_dtype=torch.bfloat16,
+            token=self.access_token,
         )
 
         self.safety_policy: str = """
@@ -56,7 +58,7 @@ class ShieldGemma2BClassifier:
         correctly.
         """
 
-        inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
+        inputs = self.tokenizer(prompt, return_tensors="pt")
         with torch.no_grad():
             logits: torch.Tensor = self.model(**inputs).logits
 
