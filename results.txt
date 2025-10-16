@@ -78,3 +78,31 @@ TIME-TO-BYPASS METRICS:
 - Standard Deviation: 3.23 seconds
 - Total Bypass Time: 137.01 seconds
 ============================================================
+
+Generic only
+============================================================
+LLM ATTACK SIMULATION RESULTS
+============================================================
+Generated: 2025-10-16 07:09:43
+
+ATTACK SUCCESS RATE METRICS:
+- Overall ASR: 56.08%
+- Success Percentage: 56.08%
+- Successful Attacks: 106
+- Total Attempts: 542
+- Attempted Attacks: 189
+- Blocked by Guard: 353
+
+ASR by Attack Type:
+- attempted: 56.99% (186 attacks)
+- blocked: 0.00% (353 attacks)
+- unknown: 0.00% (3 attacks)
+
+TIME-TO-BYPASS METRICS:
+- Average Time: 1.59 seconds
+- Median Time: 0.95 seconds
+- Min Time: 0.12 seconds
+- Max Time: 56.36 seconds
+- Standard Deviation: 5.44 seconds
+- Total Bypass Time: 168.96 seconds
+============================================================
