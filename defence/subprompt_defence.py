@@ -37,11 +37,14 @@ class SubPromptDefence:
         '''
         sentences = self.split_sentences(prompt)
 
-        for sentence in sentences:
-            if not (
-                self.cluster_guard.is_safe(sentence)
-                and self.heuristic_guard.is_safe(sentence)
-                and self.llm_guard.is_safe(sentence)
-                ):
-                return False
+        if not(self.heuristic_guard.is_safe(prompt)):
+            return False
+        else:
+            for sentence in sentences:
+                if not (
+                    self.cluster_guard.is_safe(sentence)
+                    and self.llm_guard.is_safe(sentence)
+                    ):
+                    return False
+
         return True
