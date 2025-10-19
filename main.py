@@ -27,8 +27,8 @@ if __name__ == "__main__":
 
         for prompt in prompts:
             if (
-                cluster_guard.is_safe(prompt)
-                and heuristic_guard.is_safe(prompt)
+                heuristic_guard.is_safe(prompt)
+                and cluster_guard.is_safe(prompt)
                 and llm_guard.is_safe(prompt)
             ):
                 start_time: float = time.time()
@@ -53,8 +53,8 @@ if __name__ == "__main__":
 
         for prompt in prompts:
             if (
-                cluster_guard.is_safe(prompt)
-                and heuristic_guard.is_safe(prompt)
+                heuristic_guard.is_safe(prompt)
+                and cluster_guard.is_safe(prompt)
                 and llm_guard.is_safe(prompt)
             ):
                 start_time: float = time.time()
@@ -79,8 +79,8 @@ if __name__ == "__main__":
 
         for prompt in prompts:
             if (
-                cluster_guard.is_safe(prompt)
-                and heuristic_guard.is_safe(prompt)
+                heuristic_guard.is_safe(prompt)
+                and cluster_guard.is_safe(prompt)
                 and llm_guard.is_safe(prompt)
             ):
                 start_time: float = time.time()
