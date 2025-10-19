@@ -1,10 +1,6 @@
-import json, time, os
 from defence.classifier_cluster import ClassifierCluster
-from dotenv import load_dotenv
-from metrics import AttackEvaluator, AttackResult, MetricsCalculator
 from defence.heuristic_channel import HeuristicVectorAnalyzer
 from defence.shieldgemma import ShieldGemma2BClassifier
-from query_agent import QueryAgent
 import re
 from typing import List
 
