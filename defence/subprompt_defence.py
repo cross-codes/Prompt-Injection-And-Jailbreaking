@@ -1,8 +1,8 @@
 import re
 from typing import List
-from classifier_cluster import ClassifierCluster
-from heuristic_channel import HeuristicVectorAnalyzer
-from shieldgemma import ShieldGemma2BClassifier
+from defence.classifier_cluster import ClassifierCluster
+from defence.heuristic_channel import HeuristicVectorAnalyzer
+from defence.shieldgemma import ShieldGemma2BClassifier
 
 
 class SubPromptDefence:
