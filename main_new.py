@@ -36,7 +36,7 @@ if __name__ == "__main__":
             print(f'Prompt {cnt} assesed')
             cnt += 1
 
-    with open("offence/advllm/prompts.json", "r") as fh:
+    with open("offence/regular/prompts.json", "r") as fh:
         # fmt: off
         data = json.load(fh)  # pyright: ignore[reportAny]
         prompts: list[str] = data["prompts"] # pyright: ignore[reportAny, reportRedeclaration]
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             cnt += 1
 
 
-    with open("offence/advllm/prompts.json", "r") as fh:
+    with open("offence/emoji/prompts.json", "r") as fh:
         # fmt: off
         data = json.load(fh)  # pyright: ignore[reportAny]
         prompts: list[str] = data["prompts"] # pyright: ignore[reportAny, reportRedeclaration]
@@ -82,5 +82,6 @@ if __name__ == "__main__":
                 metrics_calc.add_result(failed_result)
             print(f'Prompt {cnt} assesed')
             cnt += 1
+
 
     metrics_calc.evaluate()
