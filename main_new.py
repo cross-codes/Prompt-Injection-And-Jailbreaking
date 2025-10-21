@@ -35,6 +35,7 @@ if __name__ == "__main__":
                 metrics_calc.add_result(failed_result)
             print(f'Prompt {cnt} assesed')
             cnt += 1
+    metrics_calc.evaluate()
 '''
     with open("offence/regular/prompts.json", "r") as fh:
         # fmt: off
@@ -83,6 +84,6 @@ if __name__ == "__main__":
             print(f'Prompt {cnt} assesed')
             cnt += 1
 '''
-    metrics_calc.evaluate()
+
 
 
