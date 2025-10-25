@@ -68,6 +68,7 @@ class ClassifierCluster:
             query,
             max_length=self.tox_mx_tokens,
             truncation=True,
+            padding = "max_length",
             return_overflowing_tokens=True,
             stride=50,
             return_tensors="pt",
