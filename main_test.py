@@ -6,7 +6,7 @@ from metrics import AttackEvaluator, AttackResult, MetricsCalculator
 from defence.heuristic_channel import HeuristicVectorAnalyzer
 from defence.shieldgemma import ShieldGemma2BClassifier
 from query_agent import QueryAgent
-from tqdm import tqdm  # Import tqdm for progress bar
+from tqdm import tqdm
 
 if __name__ == "__main__":
     _ = load_dotenv()
