@@ -6,6 +6,7 @@ from metrics import AttackEvaluator, AttackResult, MetricsCalculator
 from defence.heuristic_channel import HeuristicVectorAnalyzer
 from defence.shieldgemma import ShieldGemma2BClassifier
 from query_agent import QueryAgent
+from tqdm import tqdm  # Import tqdm for progress bar
 
 if __name__ == "__main__":
     _ = load_dotenv()
@@ -26,9 +27,8 @@ if __name__ == "__main__":
         output_file: TextIO,
     ):
         tp, fn, fp, tn = 0, 0, 0, 0
-        total = len(data)
         print(f"Processing metrics for: {guard_label}...")
-        for idx, entry in enumerate(data, start=1):
+        for entry in tqdm(data, desc=f"{guard_label} Progress"):
             classification: bool = entry["classification"] == "benign"
             result: bool = guard.is_safe(entry["prompt"])
             if classification and result:
@@ -39,11 +39,6 @@ if __name__ == "__main__":
                 fp += 1
             else:
                 tn += 1
-
-            # Print progress every 5% of the total dataset
-            if idx % max(1, total // 20) == 0 or idx == total:
-                fraction_done = idx / total
-                print(f"{guard_label}: {fraction_done:.1%} processed ({idx}/{total})")
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
