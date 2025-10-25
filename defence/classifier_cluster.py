@@ -36,10 +36,11 @@ class ClassifierCluster:
     def _is_jailbreak(self, query: str) -> bool:
         inputs: BatchEncoding = self.jbreak_tokenizer(
             query,
-            max_length=self.tox_mx_tokens,
+            max_length=self.jbreak_mx_tokens,
             truncation=True,
             return_overflowing_tokens=True,
             stride=50,
+            padding = "max_length",
             return_tensors="pt",
         )
 

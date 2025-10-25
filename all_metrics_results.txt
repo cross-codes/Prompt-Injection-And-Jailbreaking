@@ -1,0 +1,7 @@
+--- Heuristic Metrics ---
+Precision: 0.5237605959414333
+Sensitivity (Recall): 0.9946341463414634
+Specificity: 0.09560975609756098
+Negative Predictive Value: 0.9468599033816425
+Accuracy: 0.5451219512195122
+

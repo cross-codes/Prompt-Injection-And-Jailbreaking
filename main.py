@@ -1,4 +1,5 @@
-import json, time, os
+import json, os
+from typing import Any, TextIO
 from defence.classifier_cluster import ClassifierCluster
 from dotenv import load_dotenv
 from metrics import AttackEvaluator, AttackResult, MetricsCalculator
@@ -18,83 +19,52 @@ if __name__ == "__main__":
     evaluator: AttackEvaluator = AttackEvaluator("tinyllama", 0.1)
     metrics_calc: MetricsCalculator = MetricsCalculator()
 
-    cnt = 0
-    with open("offence/advllm/prompts.json", "r") as fh:
-        # fmt: off
-        data = json.load(fh)  # pyright: ignore[reportAny]
-        prompts: list[str] = data["prompts"] # pyright: ignore[reportAny, reportRedeclaration]
-        # fmt: on
-
-        for prompt in prompts:
-            if (
-                heuristic_guard.is_safe(prompt)
-                and cluster_guard.is_safe(prompt)
-                and llm_guard.is_safe(prompt)
-            ):
-                start_time: float = time.time()
-                output: str = query_agent.query(prompt)
-                response_time: float = time.time() - start_time
-                # fmt: off
-                attack_result: AttackResult = evaluator.evaluate(response_time, output, prompt) # pyright: ignore[reportUnknownMemberType]
-                # fmt: on
-
-                metrics_calc.add_result(attack_result)
+    def calculate_and_write_metrics(
+        data: list[dict[str, Any]],
+        guard,
+        guard_label: str,
+        output_file: TextIO,
+    ):
+        tp, fn, fp, tn = 0, 0, 0, 0
+        print(f"Processing metrics for: {guard_label}...")
+        for entry in data:
+            classification: bool = entry["classification"] == "benign"
+            result: bool = guard.is_safe(entry["prompt"])
+            if classification and result:
+                tp += 1
+            elif classification and not result:
+                fn += 1
+            elif not classification and result:
+                fp += 1
             else:
-                failed_result: AttackResult = evaluator.create_failed_attempt(prompt)
-                metrics_calc.add_result(failed_result)
-            print(f'Prompt {cnt} assesed')
-            cnt += 1
+                tn += 1
 
-    with open("offence/emoji/prompts.json", "r") as fh:
-        # fmt: off
-        data = json.load(fh)  # pyright: ignore[reportAny]
-        prompts: list[str] = data["prompts"] # pyright: ignore[reportAny, reportRedeclaration]
-        # fmt: on
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
+        specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+        npv = tn / (tn + fn) if (tn + fn) > 0 else 0
+        accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
 
-        for prompt in prompts:
-            if (
-                heuristic_guard.is_safe(prompt)
-                and cluster_guard.is_safe(prompt)
-                and llm_guard.is_safe(prompt)
-            ):
-                start_time: float = time.time()
-                output: str = query_agent.query(prompt)
-                response_time: float = time.time() - start_time
-                # fmt: off
-                attack_result: AttackResult = evaluator.evaluate(response_time, output, prompt) # pyright: ignore[reportUnknownMemberType]
-                # fmt: on
+        _ = output_file.write(f"--- {guard_label} Metrics ---\n")
+        _ = output_file.write(f"Precision: {precision}\n")
+        _ = output_file.write(f"Sensitivity (Recall): {sensitivity}\n")
+        _ = output_file.write(f"Specificity: {specificity}\n")
+        _ = output_file.write(f"Negative Predictive Value: {npv}\n")
+        _ = output_file.write(f"Accuracy: {accuracy}\n\n")
 
-                metrics_calc.add_result(attack_result)
-            else:
-                failed_result: AttackResult = evaluator.create_failed_attempt(prompt)
-                metrics_calc.add_result(failed_result)
-            print(f'Prompt {cnt} assesed')
-            cnt += 1
+    INPUT_FILE = "offence/combined_classified_prompts.json"
+    OUTPUT_FILE = "all_metrics_results.txt"
 
-    with open("offence/regular/prompts.json", "r") as fh:
-        # fmt: off
-        data = json.load(fh)  # pyright: ignore[reportAny]
-        prompts: list[str] = data["prompts"] # pyright: ignore[reportAny, reportRedeclaration]
-        # fmt: on
+    guards = {
+        "Heuristic": heuristic_guard,
+        "Classifier Cluster": cluster_guard,
+        "ShieldGemma": llm_guard,
+    }
 
-        for prompt in prompts:
-            if (
-                heuristic_guard.is_safe(prompt)
-                and cluster_guard.is_safe(prompt)
-                and llm_guard.is_safe(prompt)
-            ):
-                start_time: float = time.time()
-                output: str = query_agent.query(prompt)
-                response_time: float = time.time() - start_time
-                # fmt: off
-                attack_result: AttackResult = evaluator.evaluate(response_time, output, prompt) # pyright: ignore[reportUnknownMemberType]
-                # fmt: on
+    with open(INPUT_FILE, "r") as fh_in:
+        data_to_process: list[dict[str, Any]] = json.load(fh_in)
 
-                metrics_calc.add_result(attack_result)
-            else:
-                failed_result: AttackResult = evaluator.create_failed_attempt(prompt)
-                metrics_calc.add_result(failed_result)
-            print(f'Prompt {cnt} assesed')
-            cnt += 1
+    with open(OUTPUT_FILE, "w") as fh_out:
+        for label, guard_instance in guards.items():
+            calculate_and_write_metrics(data_to_process, guard_instance, label, fh_out)
 
-    metrics_calc.evaluate()
