@@ -70,6 +70,7 @@ all = [
     "transformers>=4.30.0",
     "sentence-transformers>=2.0.0",
     "chromadb>=0.4.0",
+    "pydantic>=2.0.0",
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",
     "langchain-ollama>=1.0.0",

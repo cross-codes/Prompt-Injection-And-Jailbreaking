@@ -4,6 +4,10 @@ input_file: "offence/balanced_test_50_perturbed.json"
 output_file: "results/results.txt"
 model_dir: "model_artifacts"
 threat_file: "offence/malignant.json"
+test_file: "offence/metrics_test_set.json"
+
+# Ollama model used by the LLM judge in pipeline evaluation
+llm_model: "llama3"
 
 train: true
 train_file: "offence/metrics_train_set.json"
