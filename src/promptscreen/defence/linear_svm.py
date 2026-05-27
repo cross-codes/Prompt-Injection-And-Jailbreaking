@@ -98,7 +98,6 @@ class JailbreakInferenceAPI(AbstractDefence):
     def __init__(self, model_dir: str):
         model_path = Path(model_dir) / "linear_svm_model.joblib"
         feature_union_path = Path(model_dir) / "feature_union.joblib"
-        print(model_path, feature_union_path, "Testing paths")
 
         if not model_path.exists() or not feature_union_path.exists():
             raise FileNotFoundError(

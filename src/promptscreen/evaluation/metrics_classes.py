@@ -94,10 +94,15 @@ class AttackEvaluator:
         """
         text = text.strip()
         if text.startswith("```"):
-            fence_end = text.find("```", 3)
-            if fence_end != -1:
-                text = text[3:fence_end]
-            text = text.replace("```json", "", 1).strip()
+            # Strip opening fence (handles ```json, ```JSON, or bare ```)
+            first_newline = text.find("\n")
+            if first_newline != -1:
+                text = text[first_newline + 1 :]
+            # Strip closing fence
+            closing = text.rfind("```")
+            if closing != -1:
+                text = text[:closing]
+            text = text.strip()
 
         try:
             return cast(dict[str, Any], json.loads(text))

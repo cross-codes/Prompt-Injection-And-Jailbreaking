@@ -43,13 +43,15 @@ class VectorDB:
         )
 
     def add_texts(self, texts: list[str], metadatas: list[dict]):
-        ids = [str(i) for i in range(len(texts))]
+        offset = self.collection.count()
+        ids = [str(offset + i) for i in range(len(texts))]
         self.collection.add(documents=texts, metadatas=metadatas, ids=ids)
 
     def add_embeddings(
         self, texts: list[str], embeddings: list[list], metadatas: list[dict]
     ):
-        ids = [str(i) for i in range(len(texts))]
+        offset = self.collection.count()
+        ids = [str(offset + i) for i in range(len(texts))]
         self.collection.add(
             documents=texts, embeddings=embeddings, metadatas=metadatas, ids=ids
         )

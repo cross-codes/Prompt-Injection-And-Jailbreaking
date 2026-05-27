@@ -41,8 +41,9 @@ def evaluate(cfg: DictConfig, guards: dict[str, AbstractDefence]) -> None:
 
             if not result.get_verdict():
                 deemed_unsafe = True
-                end_time = time.time()
                 break
+
+        end_time = time.time()
 
         if deemed_unsafe:
             failed_result = evaluator.create_failed_attempt(prompt)
