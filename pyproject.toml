@@ -162,7 +162,7 @@ select = [
     "S",   # bandit (security)
 ]
 ignore = [
-    "E501",  # line too long (black handles this)
+    "E501",  # line too long (ruff format handles this)
     "B008",  # function calls in argument defaults
     "S101",  # assert statements (needed in tests)
     "S311",  # pseudo-random generators (fine for non-crypto use)
