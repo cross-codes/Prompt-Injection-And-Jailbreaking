@@ -8,6 +8,20 @@ from pathlib import Path
 import pytest
 
 
+def pytest_collection_modifyitems(items):
+    """Auto-apply markers based on test location.
+
+    - tests/unit/      → @pytest.mark.unit
+    - tests/integration/ → @pytest.mark.integration
+    """
+    for item in items:
+        path_parts = item.path.parts
+        if "unit" in path_parts:
+            item.add_marker(pytest.mark.unit)
+        elif "integration" in path_parts:
+            item.add_marker(pytest.mark.integration)
+
+
 @pytest.fixture
 def sample_benign_prompts() -> list[str]:
     """Sample benign prompts for testing."""

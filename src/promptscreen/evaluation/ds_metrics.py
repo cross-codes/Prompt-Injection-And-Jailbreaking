@@ -1,9 +1,12 @@
 import json
+import logging
 from typing import Any, TextIO
 
 from omegaconf import DictConfig
 
 from ..defence.abstract_defence import AbstractDefence
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_and_write_metrics(
@@ -11,9 +14,9 @@ def calculate_and_write_metrics(
     guard: AbstractDefence,
     guard_label: str,
     output_file: TextIO,
-):
+) -> None:
     tp, fn, fp, tn = 0, 0, 0, 0
-    print(f"Processing metrics for: {guard_label}...")
+    logger.info("Processing metrics for: %s", guard_label)
     for entry in data:
         is_benign: bool = entry["classification"] == "benign"
         is_safe: bool = guard.analyse(entry["prompt"]).get_verdict()
@@ -51,10 +54,10 @@ def run_suite(cfg: DictConfig, guards: dict) -> None:
     with open(cfg.input_file) as fh_in:
         data_to_process: list[dict] = json.load(fh_in)
 
-    open(cfg.output_file, "w").close()
+    open(cfg.output_file, "w").close()  # noqa: SIM115
 
     for label, guard_instance in guards.items():
         with open(cfg.output_file, "a") as fh_out:
             calculate_and_write_metrics(data_to_process, guard_instance, label, fh_out)
 
-    print(f"\nResults stored in '{cfg.output_file}'")
+    logger.info("Results stored in '%s'", cfg.output_file)

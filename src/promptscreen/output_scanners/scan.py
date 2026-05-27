@@ -3,7 +3,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 
 class OutputScanner:
-    def __init__(self):
+    def __init__(self) -> None:
         self.rejection_model_name = "protectai/distilroberta-base-rejection-v1"
         self.bias_model_name = "valurank/distilroberta-bias"
 

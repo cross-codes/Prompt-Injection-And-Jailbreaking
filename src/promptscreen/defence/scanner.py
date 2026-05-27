@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Optional
 
@@ -7,6 +8,8 @@ from typing_extensions import override
 from ..data import RULES_DIR
 from .abstract_defence import AbstractDefence
 from .ds.analysis_result import AnalysisResult
+
+logger = logging.getLogger(__name__)
 
 
 class Scanner(AbstractDefence):
@@ -24,7 +27,7 @@ class Scanner(AbstractDefence):
         self.compiled_rules: Optional[yara.Rules] = None
         self._load_rules()
 
-    def _load_rules(self):
+    def _load_rules(self) -> None:
         yara_paths = {}
         for file in os.listdir(self.rules_dir):
             if file.lower().endswith((".yar", ".yara")):
@@ -49,7 +52,8 @@ class Scanner(AbstractDefence):
         try:
             matches = self.compiled_rules.match(data=query)
         except Exception:
-            return AnalysisResult("YARA scanner found no matches", True)
+            logger.exception("YARA matching failed for query; treating as inconclusive")
+            return AnalysisResult("YARA scanner error: match failed", False)
 
         if matches:
             matched_rules = ", ".join([match.rule for match in matches])

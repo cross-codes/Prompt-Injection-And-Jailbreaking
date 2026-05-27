@@ -70,6 +70,7 @@ all = [
     "transformers>=4.30.0",
     "sentence-transformers>=2.0.0",
     "chromadb>=0.4.0",
+    "pydantic>=2.0.0",
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",
     "langchain-ollama>=1.0.0",
@@ -161,7 +162,7 @@ select = [
     "S",   # bandit (security)
 ]
 ignore = [
-    "E501",  # line too long (black handles this)
+    "E501",  # line too long (ruff format handles this)
     "B008",  # function calls in argument defaults
     "S101",  # assert statements (needed in tests)
     "S311",  # pseudo-random generators (fine for non-crypto use)
@@ -177,7 +178,7 @@ explicit_package_bases = true
 python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = false
+disallow_untyped_defs = true
 ignore_missing_imports = true
 check_untyped_defs = true
 files = ["src"]

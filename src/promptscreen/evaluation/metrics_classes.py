@@ -29,7 +29,7 @@ class AttackEvaluator:
         self.llm = QueryAgent(model_name)
 
     def evaluate(
-        self, classification_time: float, output: str, prompt: str, **kwargs
+        self, classification_time: float, output: str, prompt: str, **kwargs: Any
     ) -> AttackResult:
         """
         Takes the prompt, output, response_time and returns an AttackResult
@@ -94,10 +94,15 @@ class AttackEvaluator:
         """
         text = text.strip()
         if text.startswith("```"):
-            fence_end = text.find("```", 3)
-            if fence_end != -1:
-                text = text[3:fence_end]
-            text = text.replace("```json", "", 1).strip()
+            # Strip opening fence (handles ```json, ```JSON, or bare ```)
+            first_newline = text.find("\n")
+            if first_newline != -1:
+                text = text[first_newline + 1 :]
+            # Strip closing fence
+            closing = text.rfind("```")
+            if closing != -1:
+                text = text[:closing]
+            text = text.strip()
 
         try:
             return cast(dict[str, Any], json.loads(text))
@@ -125,7 +130,7 @@ class AttackEvaluator:
 
 
 class MetricsCalculator:
-    def __init__(self):
+    def __init__(self) -> None:
         # list of AttackResults as member variable
         self.attack_results: list[AttackResult] = []
 
@@ -205,7 +210,7 @@ TIME-TO-CLASSIFY METRICS:
 """
         return report
 
-    def _json_default(self, o):
+    def _json_default(self, o: object) -> str:
         """JSON serializer for datetime objects"""
         if isinstance(o, datetime):
             return o.isoformat()

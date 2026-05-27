@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import chromadb
 from chromadb.config import Settings
@@ -35,27 +35,32 @@ class VectorDB:
         )
         self.collection = self.get_or_create_collection(collection)
 
-    def get_or_create_collection(self, name: str):
+    def get_or_create_collection(self, name: str) -> chromadb.Collection:  # type: ignore[name-defined]
         return self.client.get_or_create_collection(
             name=name,
             embedding_function=self.embed_fn,
             metadata={"hnsw:space": "cosine"},
         )
 
-    def add_texts(self, texts: list[str], metadatas: list[dict]):
-        ids = [str(i) for i in range(len(texts))]
+    def add_texts(self, texts: list[str], metadatas: list[dict]) -> None:
+        offset = self.collection.count()
+        ids = [str(offset + i) for i in range(len(texts))]
         self.collection.add(documents=texts, metadatas=metadatas, ids=ids)
 
     def add_embeddings(
         self, texts: list[str], embeddings: list[list], metadatas: list[dict]
-    ):
-        ids = [str(i) for i in range(len(texts))]
+    ) -> None:
+        offset = self.collection.count()
+        ids = [str(offset + i) for i in range(len(texts))]
         self.collection.add(
             documents=texts, embeddings=embeddings, metadatas=metadatas, ids=ids
         )
 
-    def query(self, text: str):
-        return self.collection.query(query_texts=[text], n_results=self.n_results)
+    def query(self, text: str) -> dict[str, Any]:
+        result: dict[str, Any] = self.collection.query(  # type: ignore[assignment]
+            query_texts=[text], n_results=self.n_results
+        )
+        return result
 
 
 class VectorMatch(BaseModel):
@@ -94,8 +99,8 @@ class VectorDBScanner(AbstractDefence):
 
         if not vulnerabilities:
             return AnalysisResult(
-                type="No similar threats found in vector database.", is_safe=True
+                reason="No similar threats found in vector database.", is_safe=True
             )
         else:
             problem_string: str = "\n---\n".join(vulnerabilities)
-            return AnalysisResult(type=problem_string, is_safe=False)
+            return AnalysisResult(reason=problem_string, is_safe=False)

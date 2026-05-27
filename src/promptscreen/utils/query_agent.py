@@ -42,5 +42,5 @@ class QueryAgent:
             self.history_lst.append((query, response))
         return response
 
-    def clear_history(self):
+    def clear_history(self) -> None:
         self.history_lst.clear()

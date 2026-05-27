@@ -84,7 +84,12 @@ class HeuristicVectorAnalyzer(AbstractDefence):
         }
 
     def _keyword_bit_vector(self, prompt: str) -> dict[str, int]:
-        prompt_wds = set(prompt.lower().split())
+        # Strip punctuation so "urgent!" and "ignore," still match their keywords
+        prompt_lower = prompt.lower()
+        prompt_lower = prompt_lower.translate(
+            str.maketrans("", "", "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
+        )
+        prompt_wds = set(prompt_lower.split())
         flags: dict[str, int] = {}
         for cat, kwds in self.attack_categories.items():
             flags[cat] = 1 if any(kwd in prompt_wds for kwd in kwds) else 0

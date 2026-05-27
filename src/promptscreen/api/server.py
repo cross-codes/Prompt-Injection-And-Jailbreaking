@@ -1,7 +1,11 @@
+import logging
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from ..defence.abstract_defence import AbstractDefence
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(guards: dict[str, AbstractDefence]) -> FastAPI:
@@ -13,53 +17,49 @@ def create_app(guards: dict[str, AbstractDefence]) -> FastAPI:
     class DefenceResult(BaseModel):
         is_safe: bool
         details: str
+        confidence: float = -1.0  # -1 means the guard does not produce a score
 
     app = FastAPI(
         title="LLM Defence Suite API",
         description="Evaluates prompts against security defences.",
     )
 
+    def _run_guard(name: str, prompt: str) -> DefenceResult:
+        """Run a single guard, returning a structured result on any error."""
+        guard = guards.get(name)
+        if not guard:
+            return DefenceResult(
+                is_safe=False,
+                details=f"Error: Defence '{name}' not available.",
+            )
+        try:
+            analysis = guard.analyse(prompt)
+            return DefenceResult(
+                is_safe=analysis.get_verdict(),
+                details=analysis.get_type(),
+                confidence=(
+                    analysis.confidence if analysis.confidence is not None else -1.0
+                ),
+            )
+        except Exception:
+            logger.exception("Guard '%s' raised an unexpected error", name)
+            return DefenceResult(
+                is_safe=False,
+                details=f"Error: Defence '{name}' encountered an internal error.",
+            )
+
     @app.post("/evaluate", response_model=dict[str, DefenceResult])
-    async def evaluate_prompt(request: EvaluationRequest):
+    async def evaluate_prompt(request: EvaluationRequest) -> dict[str, DefenceResult]:
         mode = request.mode.lower()
 
         if mode == "separate":
-            results = {}
-            for defence_name in request.defences:
-                guard = guards.get(defence_name)
-
-                if guard:
-                    analysis = guard.analyse(request.prompt)
-                    results[defence_name] = DefenceResult(
-                        is_safe=analysis.get_verdict(), details=analysis.get_type()
-                    )
-                else:
-                    results[defence_name] = DefenceResult(
-                        is_safe=False,
-                        details=f"Error: Defence '{defence_name}' not available.",
-                    )
-            return results
+            return {name: _run_guard(name, request.prompt) for name in request.defences}
 
         elif mode == "chain":
-            for defence_name in request.defences:
-                guard = guards.get(defence_name)
-
-                if not guard:
-                    return {
-                        defence_name: DefenceResult(
-                            is_safe=False,
-                            details=f"Error: Defence '{defence_name}' not available.",
-                        )
-                    }
-
-                analysis = guard.analyse(request.prompt)
-                is_safe = analysis.get_verdict()
-                details = analysis.get_type()
-
-                if not is_safe:
-                    return {
-                        defence_name: DefenceResult(is_safe=is_safe, details=details)
-                    }
+            for name in request.defences:
+                result = _run_guard(name, request.prompt)
+                if not result.is_safe:
+                    return {name: result}
 
             return {
                 "ChainResult": DefenceResult(
@@ -75,7 +75,7 @@ def create_app(guards: dict[str, AbstractDefence]) -> FastAPI:
             )
 
     @app.get("/defences", response_model=list[str])
-    async def get_available_defences():
+    async def get_available_defences() -> list[str]:
         return list(guards.keys())
 
     return app
