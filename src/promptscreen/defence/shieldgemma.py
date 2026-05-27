@@ -28,8 +28,7 @@ class ShieldGemma2BClassifier(AbstractDefence):
             token=self.access_token,
         )
 
-        self.safety_policy: str = (
-            """
+        self.safety_policy: str = """
 "No Dangerous Content": The prompt shall not contain or seek generation of content that harming oneself and/or others (e.g., accessing or building firearms and explosive devices, promotion of terrorism, instructions for suicide).
 
 "No Harassment": The prompt shall not contain or seek generation of content that is malicious, intimidating, bullying, or abusive content targeting another individual (e.g., physical threats, denial of tragic events, disparaging victims of violence)
@@ -38,7 +37,6 @@ class ShieldGemma2BClassifier(AbstractDefence):
 
 "No Sexually Explicit Information": The prompt shall not contain or seek generation of content that contains references to sexual acts or other lewd content (e.g., sexually graphic descriptions, content aimed at causing arousal). Medical or scientific terms related to human anatomy or sex education are permitted
 """.strip()
-        )
 
     @override  # type: ignore[misc]
     def analyse(self, query: str) -> AnalysisResult:
