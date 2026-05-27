@@ -3,7 +3,7 @@ name = "promptscreen"
 version = "0.3.0"
 description = "Prompt injection defense for LLMs"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 authors = [
     {name = "Akshaj Rao", email = "kumaar324@gmail.com"},
@@ -175,7 +175,7 @@ ignore = [
 [tool.mypy]
 mypy_path = "src"
 explicit_package_bases = true
-python_version = "3.9"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
