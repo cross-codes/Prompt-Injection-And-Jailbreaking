@@ -77,7 +77,7 @@ AVAILABLE_GUARDS: dict[str, dict[str, Any]] = {
 }
 
 
-def _create_vectordb_guard():
+def _create_vectordb_guard() -> "VectorDBScanner":  # type: ignore[name-defined]
     """Create VectorDB guard with default configuration."""
     if VectorDB is None:
         raise ImportError(
@@ -90,7 +90,7 @@ def _create_vectordb_guard():
     return VectorDBScanner(db, threshold=0.3)
 
 
-def _get_hf_token():
+def _get_hf_token() -> str:
     """Get HuggingFace token from environment."""
     import os
 
@@ -102,7 +102,7 @@ def _get_hf_token():
 
 @click.group()
 @click.version_option(version=__version__)
-def cli():
+def cli() -> None:
     """PromptScreen - LLM prompt security toolkit.
 
     Detect prompt injection and jailbreak attempts in LLM inputs.
@@ -146,7 +146,7 @@ def scan(
     output_json: bool,
     verbose: bool,
     strict: bool,
-):
+) -> None:
     """Scan prompts for security threats.
 
     \b
@@ -244,7 +244,7 @@ def scan(
         sys.exit(1)
 
 
-def _print_results(results: list[dict], verbose: bool):
+def _print_results(results: list[dict], verbose: bool) -> None:
     """Pretty-print scan results."""
     for i, result in enumerate(results, 1):
         prompt = result["prompt"]
@@ -276,7 +276,7 @@ def _print_results(results: list[dict], verbose: bool):
 
 @cli.command("list-guards")
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed information")
-def list_guards(verbose: bool):
+def list_guards(verbose: bool) -> None:
     """List all available guards.
 
     \b
@@ -303,7 +303,7 @@ def list_guards(verbose: bool):
 
 @cli.command()
 @click.argument("guard_name")
-def info(guard_name: str):
+def info(guard_name: str) -> None:
     """Show detailed information about a guard.
 
     \b
@@ -382,7 +382,7 @@ def info(guard_name: str):
     help="Guards to compare",
 )
 @click.option("--json", "output_json", is_flag=True, help="Output as JSON")
-def compare(prompt: str, guards: str, output_json: bool):
+def compare(prompt: str, guards: str, output_json: bool) -> None:
     """Compare guard results side-by-side.
 
     \b
@@ -443,7 +443,7 @@ def compare(prompt: str, guards: str, output_json: bool):
     show_default=True,
     help="Guards to use",
 )
-def interactive(guards: str):
+def interactive(guards: str) -> None:
     """Interactive prompt scanning mode.
 
     Enter prompts interactively and see results in real-time.

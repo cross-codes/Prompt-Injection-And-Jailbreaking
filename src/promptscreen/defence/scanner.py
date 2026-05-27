@@ -27,7 +27,7 @@ class Scanner(AbstractDefence):
         self.compiled_rules: Optional[yara.Rules] = None
         self._load_rules()
 
-    def _load_rules(self):
+    def _load_rules(self) -> None:
         yara_paths = {}
         for file in os.listdir(self.rules_dir):
             if file.lower().endswith((".yar", ".yara")):

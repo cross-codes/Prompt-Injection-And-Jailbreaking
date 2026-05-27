@@ -107,8 +107,13 @@ class InjectionScanner(AbstractDefence):
         )
 
         if not all_vulnerabilities:
-            return AnalysisResult(type="No vulnerabilities found.", is_safe=True)
+            return AnalysisResult(reason="No vulnerabilities found.", is_safe=True)
 
         descriptions = [v.description for v in all_vulnerabilities]
         problem_string = "\n---\n".join(descriptions)
-        return AnalysisResult(type=problem_string, is_safe=False)
+        avg_confidence = sum(v.confidence for v in all_vulnerabilities) / len(
+            all_vulnerabilities
+        )
+        return AnalysisResult(
+            reason=problem_string, is_safe=False, confidence=avg_confidence
+        )

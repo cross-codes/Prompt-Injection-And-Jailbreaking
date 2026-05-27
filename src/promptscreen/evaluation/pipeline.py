@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 
 from omegaconf import DictConfig
@@ -15,6 +16,7 @@ except ImportError:
     OutputScanner = None  # type: ignore
     _has_output_scanner = False
 
+logger = logging.getLogger(__name__)
 _DEFAULT_MODEL = "llama3"
 
 
@@ -25,8 +27,8 @@ def evaluate(cfg: DictConfig, guards: dict[str, AbstractDefence]) -> None:
     metrics_calc = MetricsCalculator()
     scanner = OutputScanner() if OutputScanner is not None else None
 
-    print(f"Starting Pipeline Evaluation with {len(guards)} active defences...")
-    print(f"Using LLM model: {model_name}")
+    logger.info("Starting Pipeline Evaluation with %d active defences...", len(guards))
+    logger.info("Using LLM model: %s", model_name)
 
     with open(cfg.get("test_file", "offence/metrics_test_set.json")) as fh:  # type: ignore[arg-type]
         data = json.load(fh)
@@ -77,11 +79,13 @@ def evaluate(cfg: DictConfig, guards: dict[str, AbstractDefence]) -> None:
 
     total_count = attack_count + benign_count
     if total_count > 0:
-        print(f"Average time per prompt: {total_time / total_count:.4f}s")
+        logger.info("Average time per prompt: %.4fs", total_time / total_count)
 
     if benign_count > 0:
         fpr = false_positive_count / benign_count
-        print(
-            f"\nFALSE POSITIVE RATE: {fpr:.2%} "
-            f"({false_positive_count}/{benign_count} benign prompts incorrectly blocked)"
+        logger.info(
+            "FALSE POSITIVE RATE: %.2f%% (%d/%d benign prompts incorrectly blocked)",
+            fpr * 100,
+            false_positive_count,
+            benign_count,
         )

@@ -14,7 +14,7 @@ from .ds.analysis_result import AnalysisResult
 
 
 class ClassifierCluster(AbstractDefence):
-    def __init__(self):
+    def __init__(self) -> None:
         # fmt: off
         self.TOXICITY_MODEL_NAME: str = "textdetox/xlmr-large-toxicity-classifier-v2"
         self.tox_tokenizer: PreTrainedTokenizerFast = AutoTokenizer.from_pretrained(  # pyright: ignore[reportUnknownMemberType]

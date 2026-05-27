@@ -1,16 +1,12 @@
 import json
-import string
+import logging
 from pathlib import Path
-from typing import Optional, cast
+from typing import Optional
 
-import emoji
 import joblib
 import nltk
 import numpy as np
 import pandas as pd
-from nltk import pos_tag, word_tokenize
-from nltk.corpus import stopwords, wordnet
-from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
@@ -18,50 +14,15 @@ from sklearn.pipeline import FeatureUnion
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.svm import LinearSVC
 
-_ = nltk.download("wordnet")
-_ = nltk.download("stopwords")
-_ = nltk.download("averaged_perceptron_tagger_eng")
-_ = nltk.download("punkt")
-_ = nltk.download("punkt_tab")
+from ...utils.text_preprocessor import TextPreProcessor
 
+_ = nltk.download("wordnet", quiet=True)
+_ = nltk.download("stopwords", quiet=True)
+_ = nltk.download("averaged_perceptron_tagger_eng", quiet=True)
+_ = nltk.download("punkt", quiet=True)
+_ = nltk.download("punkt_tab", quiet=True)
 
-class TextPreProcessor:
-    def __init__(self, custom_stopwords: Optional[set] = None):
-        self.lemmatizer = WordNetLemmatizer()
-        self.stop_words = set(stopwords.words("english"))
-        if custom_stopwords:
-            self.stop_words.update(custom_stopwords)
-
-    def _get_wordnet_pos(self, word: str) -> str:
-        tag = pos_tag([word])[0][1][0].upper()
-        tag_dict = {
-            "J": wordnet.ADJ,
-            "N": wordnet.NOUN,
-            "V": wordnet.VERB,
-            "R": wordnet.ADV,
-        }
-        return cast(str, tag_dict.get(tag, wordnet.NOUN))
-
-    def preprocess(self, text: str) -> str:
-        text = text.lower()
-        text = emoji.demojize(text)
-        text = text.translate(str.maketrans("", "", string.punctuation))
-
-        tokens = word_tokenize(text)
-        filtered_tokens = []
-        for token in tokens:
-            if token.isalpha() and token not in self.stop_words:
-                pos = self._get_wordnet_pos(token)
-                lemma = self.lemmatizer.lemmatize(token, pos)
-                filtered_tokens.append(lemma)
-
-        return " ".join(filtered_tokens)
-
-    def preprocess_df(self, df: pd.DataFrame, text_column: str) -> pd.DataFrame:
-        df_copy = df.copy()
-        output_column = "clean_prompt"
-        df_copy[output_column] = df_copy[text_column].apply(self.preprocess)
-        return df_copy
+logger = logging.getLogger(__name__)
 
 
 def length_complexity_features(texts: list[str]) -> np.ndarray:
@@ -120,46 +81,6 @@ class JailbreakClassifier:
 
         self.feature_union: Optional[FeatureUnion] = None
         self.model: Optional[LinearSVC] = None
-        self.df: Optional[pd.DataFrame] = None
-
-    def _load_and_preprocess_data(self):
-        with open(self.json_file_path, encoding="utf-8") as f:
-            data = json.load(f)
-
-        self.df = pd.DataFrame(data)
-        self.df = self.preprocessor.preprocess_df(self.df, "prompt")
-
-    def _train_model(self) -> None:
-        if self.df is None:
-            self._load_and_preprocess_data()
-
-        assert self.df is not None
-        X_text = self.df["clean_prompt"].fillna("")
-        y = self.df["classification"]
-
-        union = FeatureUnion(
-            [
-                ("tfidf", TfidfVectorizer(max_features=17000, ngram_range=(1, 2))),
-                ("length_features", FunctionTransformer(length_complexity_features)),
-            ]
-        )
-
-        X_features = union.fit_transform(X_text)
-        svc = LinearSVC(C=1.0, class_weight="balanced", max_iter=2000, random_state=42)
-        svc.fit(X_features, y)
-
-        self.feature_union = union
-        self.model = svc
-
-        if self.model_output_dir:
-            self.model_output_dir.mkdir(parents=True, exist_ok=True)
-            joblib.dump(
-                self.feature_union, self.model_output_dir / "feature_union.joblib"
-            )
-            joblib.dump(self.model, self.model_output_dir / "linear_svm_model.joblib")
-            print(
-                f"Enhanced model (TF-IDF + 8 length features) saved to '{self.model_output_dir}'."
-            )
 
     def classify_prompt(self, prompt: str) -> str:
         if self.model is None or self.feature_union is None:
@@ -186,9 +107,14 @@ class JailbreakClassifier:
             "benign": "benign",
         }
         df["classification"] = df["classification"].map(label_map)
-        unknown_labels = set(df["classification"].unique()) - set(label_map.values())
+        unknown_labels = set(df["classification"].dropna().unique()) - set(
+            label_map.values()
+        )
         if unknown_labels:
-            print("Warning: Unknown labels found:", unknown_labels)
+            logger.warning("Unknown labels found in training data: %s", unknown_labels)
+
+        # Drop rows whose label wasn't recognised
+        df = df.dropna(subset=["classification"])
 
         df["clean_prompt"] = df["prompt"].apply(self.preprocessor.preprocess)
 
@@ -215,17 +141,17 @@ class JailbreakClassifier:
         )
         model.fit(X_train_features, y_train)
 
-        print("\n--- Validation ---")
+        logger.info("--- Validation ---")
         X_val_features = feature_union.transform(X_val)
         y_pred_val = model.predict(X_val_features)
-        print(classification_report(y_val, y_pred_val, zero_division=0))
+        logger.info("\n%s", classification_report(y_val, y_pred_val, zero_division=0))
 
-        print("\n--- Unseen Test ---")
+        logger.info("--- Unseen Test ---")
         X_test_features = feature_union.transform(X_test)
         y_pred = model.predict(X_test_features)
-        print(classification_report(y_test, y_pred))
-        print("--------------------------------------------\n")
+        logger.info("\n%s", classification_report(y_test, y_pred))
 
+        # Retrain on the full dataset for the saved artefact
         self.feature_union = FeatureUnion(
             [
                 ("tfidf", TfidfVectorizer(max_features=17000, ngram_range=(1, 2))),
@@ -244,4 +170,4 @@ class JailbreakClassifier:
                 self.feature_union, self.model_output_dir / "feature_union.joblib"
             )
             joblib.dump(self.model, self.model_output_dir / "linear_svm_model.joblib")
-            print(f"Final enhanced model saved to '{self.model_output_dir}'.")
+            logger.info("Final model saved to '%s'.", self.model_output_dir)

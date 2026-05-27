@@ -1,47 +1,15 @@
-import string
+import logging
 from pathlib import Path
-from typing import Optional, cast
 
-import emoji
 import joblib
 import numpy as np
-from nltk import pos_tag, word_tokenize
-from nltk.corpus import stopwords, wordnet
-from nltk.stem import WordNetLemmatizer
 from typing_extensions import override
 
+from ..utils.text_preprocessor import TextPreProcessor
 from .abstract_defence import AbstractDefence
 from .ds.analysis_result import AnalysisResult
 
-
-class TextPreProcessor:
-    def __init__(self, custom_stopwords: Optional[set] = None):
-        self.lemmatizer = WordNetLemmatizer()
-        self.stop_words = set(stopwords.words("english"))
-        if custom_stopwords:
-            self.stop_words.update(custom_stopwords)
-
-    def _get_wordnet_pos(self, word: str) -> str:
-        tag = pos_tag([word])[0][1][0].upper()
-        tag_dict = {
-            "J": wordnet.ADJ,
-            "N": wordnet.NOUN,
-            "V": wordnet.VERB,
-            "R": wordnet.ADV,
-        }
-        return cast(str, tag_dict.get(tag, wordnet.NOUN))
-
-    def preprocess(self, text: str) -> str:
-        text = text.lower()
-        text = emoji.demojize(text)
-        text = text.translate(str.maketrans("", "", string.punctuation))
-        tokens = word_tokenize(text)
-        filtered_tokens = [
-            self.lemmatizer.lemmatize(token, self._get_wordnet_pos(token))
-            for token in tokens
-            if token.isalpha() and token not in self.stop_words
-        ]
-        return " ".join(filtered_tokens)
+logger = logging.getLogger(__name__)
 
 
 def length_complexity_features(texts: list[str]) -> np.ndarray:

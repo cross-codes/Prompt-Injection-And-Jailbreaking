@@ -99,7 +99,7 @@ class PolymorphicPromptAssembler:
         final_system += self.TOPIC_CONSTRAIN.replace("{task_topic}", task_topic)
         self.secure_system_prompt = final_system
 
-    def single_prompt_assemble(self, user_input: str):
+    def single_prompt_assemble(self, user_input: str) -> tuple[str, tuple[str, str]]:
         left_sep, right_sep = random.choice(self.SEPARATORS)  # nosec
         format_constrain = self.FORMAT_CONSTRAIN.format(
             left_sep=left_sep, right_sep=right_sep
@@ -108,6 +108,6 @@ class PolymorphicPromptAssembler:
         secure_prompt = self.secure_system_prompt + "\n" + body
         return secure_prompt, (left_sep, right_sep)
 
-    def leak_detect(self, response: str, canary):
+    def leak_detect(self, response: str, canary: tuple[str, str]) -> bool:
         left_sep, right_sep = canary
         return left_sep in response or right_sep in response
