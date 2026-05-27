@@ -56,17 +56,15 @@ def create_app(guards: dict[str, AbstractDefence]) -> FastAPI:
             return {name: _run_guard(name, request.prompt) for name in request.defences}
 
         elif mode == "chain":
+            # Accumulate results so the response shape is always {guard_name: result},
+            # regardless of whether a guard fails or all pass.
+            chain_results: dict[str, DefenceResult] = {}
             for name in request.defences:
                 result = _run_guard(name, request.prompt)
+                chain_results[name] = result
                 if not result.is_safe:
-                    return {name: result}
-
-            return {
-                "ChainResult": DefenceResult(
-                    is_safe=True,
-                    details="All defences passed in chain evaluation.",
-                )
-            }
+                    return chain_results  # early-stop; client sees which guard failed
+            return chain_results
 
         else:
             raise HTTPException(

@@ -65,8 +65,11 @@ class TestAPIEndpoints:
         assert response.status_code == 200
 
         data = response.json()
-        assert "ChainResult" in data
-        assert data["ChainResult"]["is_safe"] is True
+        # Chain mode now returns {guard_name: result} consistently for all guards
+        assert "heuristic" in data
+        assert "scanner" in data
+        assert data["heuristic"]["is_safe"] is True
+        assert data["scanner"]["is_safe"] is True
 
     def test_evaluate_chain_mode_blocked(self, client):
         """Test POST /evaluate in chain mode (blocked by guard)."""

@@ -2,11 +2,15 @@
 
 from .abstract_defence import AbstractDefence
 from .ds.analysis_result import AnalysisResult
+from .encoding_detector import EncodingDetectorGuard
 from .heuristic_channel import HeuristicVectorAnalyzer
 from .injection_regex import InjectionScanner
 from .linear_svm import JailbreakInferenceAPI
 from .ppa_defence import PolymorphicPromptAssembler
+from .prompt_length import PromptLengthGuard
+from .rate_limit import RateLimitGuard
 from .scanner import Scanner
+from .unicode_guard import UnicodeGuard
 
 # Optional VectorDB guard (requires chromadb)
 try:
@@ -38,11 +42,15 @@ except ImportError:
 __all__ = [
     "AbstractDefence",
     "AnalysisResult",
+    "EncodingDetectorGuard",
     "HeuristicVectorAnalyzer",
-    "JailbreakInferenceAPI",
-    "Scanner",
     "InjectionScanner",
+    "JailbreakInferenceAPI",
     "PolymorphicPromptAssembler",
+    "PromptLengthGuard",
+    "RateLimitGuard",
+    "Scanner",
+    "UnicodeGuard",
     # Optional - may be None if dependencies not installed
     "VectorDB",
     "VectorDBScanner",
