@@ -21,34 +21,17 @@ import unicodedata
 
 from typing_extensions import override
 
+from ..utils.unicode_normalize import DIRECTIONAL_CHARS, ZERO_WIDTH_CHARS
 from .abstract_defence import AbstractDefence
 from .ds.analysis_result import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
-# RTL/LTR directional override and embedding codepoints
-_RTL_OVERRIDE_CHARS: frozenset[str] = frozenset(
-    "\u200e"  # LEFT-TO-RIGHT MARK
-    "\u200f"  # RIGHT-TO-LEFT MARK
-    "\u202a"  # LEFT-TO-RIGHT EMBEDDING
-    "\u202b"  # RIGHT-TO-LEFT EMBEDDING
-    "\u202c"  # POP DIRECTIONAL FORMATTING
-    "\u202d"  # LEFT-TO-RIGHT OVERRIDE
-    "\u202e"  # RIGHT-TO-LEFT OVERRIDE  ← most commonly abused
-    "\u2066"  # LEFT-TO-RIGHT ISOLATE
-    "\u2067"  # RIGHT-TO-LEFT ISOLATE
-    "\u2068"  # FIRST STRONG ISOLATE
-    "\u2069"  # POP DIRECTIONAL ISOLATE
-)
-
-# Zero-width / soft-hyphen characters used to hide text from regex scanners
-_ZERO_WIDTH_CHARS: frozenset[str] = frozenset(
-    "\u00ad"  # SOFT HYPHEN
-    "\u200b"  # ZERO WIDTH SPACE
-    "\u200c"  # ZERO WIDTH NON-JOINER
-    "\u200d"  # ZERO WIDTH JOINER
-    "\ufeff"  # BYTE ORDER MARK / ZERO WIDTH NO-BREAK SPACE
-)
+# Character sets live in utils.unicode_normalize (shared with the model-side
+# text normalizer); aliased here under this guard's original private names
+# so the rest of this module is unchanged.
+_RTL_OVERRIDE_CHARS = DIRECTIONAL_CHARS
+_ZERO_WIDTH_CHARS = ZERO_WIDTH_CHARS
 
 # Scripts that are commonly used for homograph attacks against Latin text
 _CONFUSABLE_SCRIPTS = frozenset(

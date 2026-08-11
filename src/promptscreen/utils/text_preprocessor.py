@@ -8,11 +8,16 @@ from nltk import pos_tag, word_tokenize
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
 
+from .unicode_normalize import normalize_for_model
+
 
 class TextPreProcessor:
     """Normalises raw prompt text for ML classifiers.
 
     Steps applied:
+    0. Unicode normalization (undoes zero-width/tag/combining-mark
+       obfuscation so real words survive tokenization -- see
+       unicode_normalize.normalize_for_model)
     1. Lower-case
     2. Emoji demojization (e.g. 😀 → :grinning_face:)
     3. Punctuation removal
@@ -38,6 +43,7 @@ class TextPreProcessor:
         return cast(str, tag_dict.get(tag, wordnet.NOUN))
 
     def preprocess(self, text: str) -> str:
+        text = normalize_for_model(text)
         text = text.lower()
         text = emoji.demojize(text)
         text = text.translate(str.maketrans("", "", string.punctuation))

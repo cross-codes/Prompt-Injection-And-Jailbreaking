@@ -6,61 +6,19 @@ import joblib
 import numpy as np
 from typing_extensions import override
 
+# Re-exported for pickle back-compat -- see text_features.py's module docstring.
+from ..utils.text_features import length_complexity_features  # noqa: F401
 from ..utils.text_preprocessor import TextPreProcessor
 from .abstract_defence import AbstractDefence
 from .ds.analysis_result import AnalysisResult
 
 logger = logging.getLogger(__name__)
 
-
-def length_complexity_features(texts: list[str]) -> np.ndarray:
-    features = []
-    attack_keywords = {
-        "ignore",
-        "system",
-        "prompt",
-        "act",
-        "as",
-        "instruction",
-        "follow",
-        "previous",
-    }
-
-    for text in texts:
-        char_len = len(text)
-        word_len = len(text.split())
-        char_no_space = len(text.replace(" ", ""))
-
-        words = text.split()
-        if word_len > 0:
-            avg_word_len = np.mean([len(w) for w in words])
-            punct_ratio = text.count(".") / char_len if char_len > 0 else 0
-            attack_density = sum(1 for w in words if w in attack_keywords) / word_len
-            repetition_score = (
-                max([words.count(w) for w in set(words)]) / word_len
-                if word_len > 0
-                else 0
-            )
-        else:
-            avg_word_len = 0
-            punct_ratio = 0
-            attack_density = 0
-            repetition_score = 0
-
-        features.append(
-            [
-                char_len / 1000,
-                word_len / 100,
-                char_no_space / 1000,
-                avg_word_len,
-                punct_ratio,
-                attack_density,
-                repetition_score,
-                1.0 / (1 + word_len),
-            ]
-        )
-
-    return np.array(features)
+# Below this raw length, legitimate short prompts ("ok", "the", "123") can
+# fully empty out during normal preprocessing (punctuation/stopword removal)
+# with no obfuscation involved -- the empty-text short-circuit below should
+# only fire on inputs long enough that vanishing entirely is itself unusual.
+_MIN_LEN_FOR_EMPTY_CHECK = 20
 
 
 class JailbreakInferenceAPI(AbstractDefence):
@@ -107,6 +65,21 @@ class JailbreakInferenceAPI(AbstractDefence):
     @override
     def analyse(self, query: str) -> AnalysisResult:
         clean_prompt = self.preprocessor.preprocess(query)
+
+        raw = query.strip()
+        if not clean_prompt and len(raw) >= _MIN_LEN_FOR_EMPTY_CHECK:
+            # A substantial prompt that normalizes to nothing is itself
+            # anomalous (heavy obfuscation, non-alphabetic content, or an
+            # obfuscation technique normalize_for_model doesn't cover yet).
+            # Flag it rather than silently handing the model a near-zero
+            # feature vector it has no real basis to judge.
+            return AnalysisResult(
+                "Semantic SVM classifier: prompt contained no analysable text "
+                "after normalisation",
+                False,
+                confidence=0.3,
+            )
+
         features = self.feature_union.transform([clean_prompt])
         prediction = self.model.predict(features)
         confidence = self._decision_confidence(features)
