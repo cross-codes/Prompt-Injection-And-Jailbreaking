@@ -134,6 +134,26 @@ Response (early-stops at the first blocking guard, all evaluated guards are retu
 }
 ```
 
+### Hardening the API server
+
+`create_app()` is unauthenticated with no CORS policy by default -- fine for
+local/dev use, not for exposing beyond localhost. Pass these to lock it down:
+
+```python
+from promptscreen.api import create_app
+
+app = create_app(
+    guards,
+    api_key="your-secret-key",          # requires a matching X-API-Key header
+    allowed_origins=["https://your-app.example.com"],  # enables CORS
+    max_body_bytes=1_000_000,           # 413s oversized requests before parsing (default 1 MB)
+)
+```
+
+`examples/run_api.py` reads the API key from the `PROMPTSCREEN_API_KEY`
+environment variable and warns if you bind to a non-localhost host without
+one set.
+
 ### New safety layer guards
 
 ```python

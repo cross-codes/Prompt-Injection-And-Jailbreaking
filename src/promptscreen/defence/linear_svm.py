@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Optional
 
 import joblib
 import numpy as np
@@ -87,9 +88,30 @@ class JailbreakInferenceAPI(AbstractDefence):
         self.feature_union = joblib.load(feature_union_path)
         self.preprocessor = TextPreProcessor()
 
+    def _decision_confidence(self, features: np.ndarray) -> Optional[float]:
+        """Map the SVM's decision margin to a 0.5-1.0 confidence score.
+
+        LinearSVC has no ``predict_proba`` (that requires the heavier ``SVC``
+        with ``probability=True``), but ``decision_function`` gives the
+        signed distance to the separating hyperplane -- larger magnitude
+        means the prompt sits further from the boundary, i.e. the guard is
+        more confident in whichever verdict it returned. This is an
+        uncalibrated heuristic, not a true probability.
+        """
+        try:
+            margin = float(self.model.decision_function(features)[0])
+        except (AttributeError, IndexError, TypeError):
+            return None
+        return float(1.0 / (1.0 + np.exp(-abs(margin))))
+
     @override
     def analyse(self, query: str) -> AnalysisResult:
         clean_prompt = self.preprocessor.preprocess(query)
         features = self.feature_union.transform([clean_prompt])
         prediction = self.model.predict(features)
-        return AnalysisResult("Semantic SVM classifier", prediction[0] != "jailbreak")
+        confidence = self._decision_confidence(features)
+        return AnalysisResult(
+            "Semantic SVM classifier",
+            prediction[0] != "jailbreak",
+            confidence=confidence,
+        )

@@ -24,102 +24,140 @@ from .defence import (
     VectorDBScanner,
 )
 
-# Type for guard factory
-GuardFactory = Callable[[], AbstractDefence]
+# Type for guard factory. Receives a dict of CLI-supplied overrides (parsed
+# from --option guard.param=value); guards that don't accept overrides just
+# ignore it.
+GuardFactory = Callable[[dict[str, Any]], AbstractDefence]
 
-# Guard registry with factory functions
+# Guard registry with factory functions. "options" documents the CLI-tunable
+# constructor parameters and their defaults for `info`/`list-guards
+# --verbose`; guards with no tunable parameters have an empty dict.
 AVAILABLE_GUARDS: dict[str, dict[str, Any]] = {
     "heuristic": {
-        "factory": lambda: HeuristicVectorAnalyzer(threshold=2, pm_shot_lim=3),
+        "factory": lambda opts: HeuristicVectorAnalyzer(
+            threshold=opts.get("threshold", 2), pm_shot_lim=opts.get("pm_shot_lim", 3)
+        ),
         "name": "HeuristicVectorAnalyzer",
         "speed": "Very Fast (< 1ms)",
         "description": "Pattern-based detection using keyword matching",
         "requires": "core",
+        "options": {"threshold": 2, "pm_shot_lim": 3},
     },
     "scanner": {
-        "factory": lambda: Scanner(),
+        "factory": lambda opts: Scanner(rules_dir=opts.get("rules_dir")),
         "name": "Scanner (YARA)",
         "speed": "Very Fast (< 5ms)",
         "description": "Pattern matching using bundled YARA rules",
         "requires": "core",
+        "options": {"rules_dir": None},
     },
     "injection": {
-        "factory": lambda: InjectionScanner(),
+        "factory": lambda opts: InjectionScanner(),
         "name": "InjectionScanner",
         "speed": "Very Fast (< 1ms)",
         "description": "Regex-based detection of injection attempts",
         "requires": "core",
+        "options": {},
     },
     "length": {
-        "factory": lambda: PromptLengthGuard(),
+        "factory": lambda opts: PromptLengthGuard(
+            max_chars=opts.get("max_chars", 10_000),
+            warn_chars=opts.get("warn_chars", 4_000),
+        ),
         "name": "PromptLengthGuard",
         "speed": "Very Fast (< 1ms)",
         "description": "Hard/soft character-count limits; blocks unusually long prompts",
         "requires": "core",
+        "options": {"max_chars": 10_000, "warn_chars": 4_000},
     },
     "unicode": {
-        "factory": lambda: UnicodeGuard(),
+        "factory": lambda opts: UnicodeGuard(min_word_len=opts.get("min_word_len", 4)),
         "name": "UnicodeGuard",
         "speed": "Very Fast (< 1ms)",
         "description": "Detects RTL overrides, zero-width chars, and homograph attacks",
         "requires": "core",
+        "options": {"min_word_len": 4},
     },
     "encoding": {
-        "factory": lambda: EncodingDetectorGuard(),
+        "factory": lambda opts: EncodingDetectorGuard(
+            block_on_encoding_alone=opts.get("block_on_encoding_alone", False)
+        ),
         "name": "EncodingDetectorGuard",
         "speed": "Very Fast (< 1ms)",
         "description": "Detects Base64, hex, ROT13, and URL-encoded payloads",
         "requires": "core",
+        "options": {"block_on_encoding_alone": False},
     },
     "ratelimit": {
-        "factory": lambda: RateLimitGuard(),
+        "factory": lambda opts: RateLimitGuard(
+            max_requests=opts.get("max_requests", 60),
+            window_seconds=opts.get("window_seconds", 60.0),
+        ),
         "name": "RateLimitGuard",
         "speed": "Very Fast (< 1ms)",
         "description": "Sliding-window rate limiter; detects automated probing",
         "requires": "core",
+        "options": {"max_requests": 60, "window_seconds": 60.0},
     },
     "svm": {
-        "factory": lambda: JailbreakInferenceAPI("model_artifacts"),
+        "factory": lambda opts: JailbreakInferenceAPI(
+            opts.get("model_dir", "model_artifacts")
+        ),
         "name": "JailbreakInferenceAPI (SVM)",
         "speed": "Medium (5-15ms)",
         "description": "ML classifier trained on jailbreak datasets",
         "requires": "core + trained model",
+        "options": {"model_dir": "model_artifacts"},
     },
     "vectordb": {
-        "factory": lambda: _create_vectordb_guard(),
+        "factory": lambda opts: _create_vectordb_guard(opts),
         "name": "VectorDBScanner",
         "speed": "Slow (50-200ms)",
         "description": "Similarity search against known threats",
         "requires": "[vectordb]",
+        "options": {
+            "model": "all-MiniLM-L6-v2",
+            "collection": "threats",
+            "db_dir": "chroma_db",
+            "n_results": 5,
+            "threshold": 0.3,
+        },
     },
     "cluster": {
-        "factory": lambda: ClassifierCluster(),
+        "factory": lambda opts: ClassifierCluster(),
         "name": "ClassifierCluster",
         "speed": "Very Slow (1-3s)",
         "description": "Dual ML models (toxicity + jailbreak)",
         "requires": "[ml]",
+        "options": {},
     },
     "shieldgemma": {
-        "factory": lambda: ShieldGemma2BClassifier(token=_get_hf_token()),
+        "factory": lambda opts: ShieldGemma2BClassifier(token=_get_hf_token()),
         "name": "ShieldGemma2BClassifier",
         "speed": "Very Slow (1-3s)",
         "description": "Google's ShieldGemma 2B safety model",
         "requires": "[ml] + HF token",
+        # Deliberately not overridable via --option: the token is a secret
+        # and shouldn't be passable on the command line / shell history.
+        "options": {},
     },
 }
 
 
-def _create_vectordb_guard() -> "VectorDBScanner":  # type: ignore[name-defined]
-    """Create VectorDB guard with default configuration."""
+def _create_vectordb_guard(opts: dict[str, Any]) -> "VectorDBScanner":  # type: ignore[name-defined]
+    """Create VectorDB guard, optionally overridden by CLI --option values."""
     if VectorDB is None:
         raise ImportError(
             "VectorDB requires chromadb. Install with: pip install promptscreen[vectordb]"
         )
     # For CLI, create empty DB - user should populate separately
     db = VectorDB(
-        model="all-MiniLM-L6-v2", collection="threats", db_dir="chroma_db", n_results=5
+        model=opts.get("model", "all-MiniLM-L6-v2"),
+        collection=opts.get("collection", "threats"),
+        db_dir=opts.get("db_dir", "chroma_db"),
+        n_results=opts.get("n_results", 5),
     )
-    return VectorDBScanner(db, threshold=0.3)
+    return VectorDBScanner(db, threshold=opts.get("threshold", 0.3))
 
 
 def _get_hf_token() -> str:
@@ -130,6 +168,45 @@ def _get_hf_token() -> str:
     if not token:
         raise ValueError("ShieldGemma requires HUGGING_FACE_TOKEN environment variable")
     return token
+
+
+def _coerce_option_value(value: str) -> Any:
+    """Best-effort string -> Python type coercion for --option values."""
+    if value.lower() in ("true", "false"):
+        return value.lower() == "true"
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    return value
+
+
+def _parse_guard_options(raw_options: tuple[str, ...]) -> dict[str, dict[str, Any]]:
+    """Parse repeated ``--option guard.param=value`` flags.
+
+    Returns ``{guard_name: {param: coerced_value}}``. Raises
+    ``click.BadOptionUsage`` on malformed input.
+    """
+    overrides: dict[str, dict[str, Any]] = {}
+    for raw in raw_options:
+        if "=" not in raw:
+            raise click.BadOptionUsage(
+                "option",
+                f"Invalid --option '{raw}'. Expected format: guard.param=value",
+            )
+        key, value = raw.split("=", 1)
+        if "." not in key:
+            raise click.BadOptionUsage(
+                "option",
+                f"Invalid --option '{raw}'. Expected format: guard.param=value",
+            )
+        guard_name, param = key.split(".", 1)
+        overrides.setdefault(guard_name, {})[param] = _coerce_option_value(value)
+    return overrides
 
 
 @click.group()
@@ -171,6 +248,15 @@ def cli() -> None:
     is_flag=True,
     help="Exit with code 1 if any prompt is blocked",
 )
+@click.option(
+    "--option",
+    "-o",
+    "raw_options",
+    multiple=True,
+    metavar="GUARD.PARAM=VALUE",
+    help="Override a guard's constructor parameter, e.g. -o heuristic.threshold=3. "
+    "Repeatable. See `promptscreen info <guard>` for tunable parameters.",
+)
 def scan(
     prompts: tuple[str, ...],
     file: Optional[Path],
@@ -178,6 +264,7 @@ def scan(
     output_json: bool,
     verbose: bool,
     strict: bool,
+    raw_options: tuple[str, ...],
 ) -> None:
     """Scan prompts for security threats.
 
@@ -194,6 +281,9 @@ def scan(
 
         # Use specific guards
         promptscreen scan "test" --guards heuristic,svm
+
+        # Tune a guard's parameters
+        promptscreen scan "test" --guards length -o length.max_chars=500
 
         # JSON output (for scripting)
         promptscreen scan "test" --json
@@ -212,6 +302,8 @@ def scan(
         click.echo('Usage: promptscreen scan "prompt" or --file prompts.txt', err=True)
         sys.exit(1)
 
+    guard_options = _parse_guard_options(raw_options)
+
     # Initialize guards
     guard_names = [g.strip() for g in guards.split(",")]
     initialized_guards = {}
@@ -223,7 +315,8 @@ def scan(
             sys.exit(1)
 
         try:
-            initialized_guards[name] = AVAILABLE_GUARDS[name]["factory"]()  # type: ignore
+            opts = guard_options.get(name, {})
+            initialized_guards[name] = AVAILABLE_GUARDS[name]["factory"](opts)  # type: ignore
             if verbose:
                 click.echo(f"✓ Initialized guard: {name}", err=True)
         except ImportError as e:
@@ -324,6 +417,9 @@ def list_guards(verbose: bool) -> None:
             click.echo(f"    Speed:       {info['speed']}")
             click.echo(f"    Description: {info['description']}")
             click.echo(f"    Requires:    {info['requires']}")
+            if info["options"]:
+                opts_str = ", ".join(f"{k}={v!r}" for k, v in info["options"].items())
+                click.echo(f"    Options:     {opts_str}")
             click.echo()
     else:
         click.echo("\nAvailable Guards:\n")
@@ -355,6 +451,11 @@ def info(guard_name: str) -> None:
     click.echo(f"Speed:       {info_dict['speed']}")
     click.echo(f"Description: {info_dict['description']}")
     click.echo(f"Requires:    {info_dict['requires']}")
+
+    if info_dict["options"]:
+        click.echo("\nTunable options (via --option guard.param=value):")
+        for param, default in info_dict["options"].items():
+            click.echo(f"  • {guard_name}.{param} (default: {default!r})")
 
     # Additional details
     details = {
@@ -414,7 +515,18 @@ def info(guard_name: str) -> None:
     help="Guards to compare",
 )
 @click.option("--json", "output_json", is_flag=True, help="Output as JSON")
-def compare(prompt: str, guards: str, output_json: bool) -> None:
+@click.option(
+    "--option",
+    "-o",
+    "raw_options",
+    multiple=True,
+    metavar="GUARD.PARAM=VALUE",
+    help="Override a guard's constructor parameter, e.g. -o heuristic.threshold=3. "
+    "Repeatable. See `promptscreen info <guard>` for tunable parameters.",
+)
+def compare(
+    prompt: str, guards: str, output_json: bool, raw_options: tuple[str, ...]
+) -> None:
     """Compare guard results side-by-side.
 
     \b
@@ -422,8 +534,10 @@ def compare(prompt: str, guards: str, output_json: bool) -> None:
         promptscreen compare "test prompt"
         promptscreen compare "test" --guards heuristic,svm,scanner
         promptscreen compare "test" --json
+        promptscreen compare "test" --guards length -o length.max_chars=10
     """
     guard_names = [g.strip() for g in guards.split(",")]
+    guard_options = _parse_guard_options(raw_options)
     results = {}
 
     if not output_json:
@@ -440,7 +554,7 @@ def compare(prompt: str, guards: str, output_json: bool) -> None:
             continue
 
         try:
-            guard = AVAILABLE_GUARDS[name]["factory"]()
+            guard = AVAILABLE_GUARDS[name]["factory"](guard_options.get(name, {}))
             analysis = guard.analyse(prompt)
 
             is_safe = analysis.get_verdict()
@@ -475,7 +589,16 @@ def compare(prompt: str, guards: str, output_json: bool) -> None:
     show_default=True,
     help="Guards to use",
 )
-def interactive(guards: str) -> None:
+@click.option(
+    "--option",
+    "-o",
+    "raw_options",
+    multiple=True,
+    metavar="GUARD.PARAM=VALUE",
+    help="Override a guard's constructor parameter, e.g. -o heuristic.threshold=3. "
+    "Repeatable. See `promptscreen info <guard>` for tunable parameters.",
+)
+def interactive(guards: str, raw_options: tuple[str, ...]) -> None:
     """Interactive prompt scanning mode.
 
     Enter prompts interactively and see results in real-time.
@@ -485,8 +608,10 @@ def interactive(guards: str) -> None:
     Example:
         promptscreen interactive
         promptscreen interactive --guards heuristic,svm,scanner
+        promptscreen interactive --guards length -o length.max_chars=500
     """
     guard_names = [g.strip() for g in guards.split(",")]
+    guard_options = _parse_guard_options(raw_options)
     initialized_guards = {}
 
     # Initialize guards
@@ -497,7 +622,9 @@ def interactive(guards: str) -> None:
             continue
 
         try:
-            initialized_guards[name] = AVAILABLE_GUARDS[name]["factory"]()
+            initialized_guards[name] = AVAILABLE_GUARDS[name]["factory"](
+                guard_options.get(name, {})
+            )
             click.echo(f"  ✓ {name}")
         except Exception as e:
             click.echo(f"  ✗ {name}: {e}")

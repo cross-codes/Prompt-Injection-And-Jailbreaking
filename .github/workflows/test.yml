@@ -45,11 +45,9 @@ jobs:
 
       - name: Type check with mypy
         run: mypy src/
-        continue-on-error: true
 
       - name: Security check with bandit
         run: bandit -c pyproject.toml -r src/ tests/
-        continue-on-error: true
 
       - name: Test with pytest
         run: pytest tests/ --cov --cov-report=xml --cov-report=term

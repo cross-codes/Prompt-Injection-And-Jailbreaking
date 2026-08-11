@@ -3,6 +3,8 @@
 This starts an API server that allows testing guards via HTTP requests.
 """
 
+import os
+
 import hydra
 import uvicorn
 from omegaconf import DictConfig
@@ -85,12 +87,21 @@ def main(cfg: DictConfig) -> None:
 
     host = cfg.api.get("host", "127.0.0.1")
     port = cfg.api.get("port", 8000)
+    # Set PROMPTSCREEN_API_KEY to require an X-API-Key header on every
+    # request. Unset (the default) leaves the API unauthenticated -- fine
+    # for localhost-only dev use, not for exposing it beyond that.
+    api_key = os.getenv("PROMPTSCREEN_API_KEY")
 
     print(f"\nStarting API server at http://{host}:{port}")
     print(f"API docs available at: http://{host}:{port}/docs")
+    if not api_key and host not in ("127.0.0.1", "localhost"):
+        print(
+            "WARNING: binding to a non-localhost host with no "
+            "PROMPTSCREEN_API_KEY set -- this API will be unauthenticated."
+        )
     print("=" * 60)
 
-    app = create_app(guards)
+    app = create_app(guards, api_key=api_key)
     uvicorn.run(app, host=host, port=port)  # noqa: S104
 
 
