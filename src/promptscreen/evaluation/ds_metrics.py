@@ -15,20 +15,23 @@ def calculate_and_write_metrics(
     guard_label: str,
     output_file: TextIO,
 ) -> None:
+    # Positive class = "malicious prompt, correctly blocked" (the standard
+    # framing for an attack-detection system). tp/fn track attack prompts,
+    # fp/tn track benign prompts.
     tp, fn, fp, tn = 0, 0, 0, 0
     logger.info("Processing metrics for: %s", guard_label)
     for entry in data:
-        is_benign: bool = entry["classification"] == "benign"
-        is_safe: bool = guard.analyse(entry["prompt"]).get_verdict()
+        is_malicious: bool = entry["classification"] != "benign"
+        is_blocked: bool = not guard.analyse(entry["prompt"]).get_verdict()
 
-        if is_benign and is_safe:
-            tp += 1
-        elif is_benign and not is_safe:
-            fn += 1
-        elif not is_benign and is_safe:
-            fp += 1
+        if is_malicious and is_blocked:
+            tp += 1  # attack correctly blocked
+        elif is_malicious and not is_blocked:
+            fn += 1  # attack missed
+        elif not is_malicious and is_blocked:
+            fp += 1  # benign prompt incorrectly blocked
         else:
-            tn += 1
+            tn += 1  # benign prompt correctly allowed
 
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
     sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
