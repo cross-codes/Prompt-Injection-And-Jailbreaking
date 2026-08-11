@@ -1,6 +1,6 @@
 mode: pipeline
 
-input_file: "offence/balanced_test_50_perturbed.json"
+input_file: "offence/metrics_test_set.json"
 output_file: "results/results.txt"
 model_dir: "model_artifacts"
 threat_file: "offence/malignant.json"
@@ -11,6 +11,11 @@ llm_model: "llama3"
 
 train: true
 train_file: "offence/metrics_train_set.json"
+
+# Held-out obfuscation-robustness eval, evaluated separately in run_suite
+# (never trained or tested on in the main split -- see split_dataset.py).
+robustness_files:
+  - "offence/robustness_eval.json"
 
 vectordb:
   model: "all-MiniLM-L6-v2"

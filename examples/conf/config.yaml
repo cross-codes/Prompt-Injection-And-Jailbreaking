@@ -10,6 +10,11 @@ train_file: offence/metrics_train_set.json
 input_file: offence/metrics_test_set.json
 test_file: offence/metrics_test_set.json
 
+# Held-out obfuscation-robustness eval, evaluated separately in run_suite
+# (never trained or tested on in the main split -- see split_dataset.py).
+robustness_files:
+  - offence/robustness_eval.json
+
 vectordb:
   model: "all-MiniLM-L6-v2"
   collection: "threat_prompts"
