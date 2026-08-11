@@ -1,12 +1,13 @@
-rule InstructionBypass: Injection
+rule ContainsIPAddress
 {
     meta:
-        category = "Instruction Bypass"
-        description = "Detects phrases used to ignore, disregard, or bypass instructions."
-        author = "Adam M. Swanda"
+        category = "Sensitive Data"
+        description = "Detects IPv4 and IPv6 addresses in a prompt, which may indicate exfiltration targets, C2 endpoints, or internal network disclosure"
 
     strings:
-        $bypass_phrase = /(Ignore|Disregard|Skip|Forget|Neglect|Overlook|Omit|Bypass|Pay no attention to|Do not follow|Do not obey)\s*(prior|previous|preceding|above|foregoing|earlier|initial)?\s*(content|text|instructions|instruction|directives|directive|commands|command|context|conversation|input|inputs|data|message|messages|communication|response|responses|request|requests)\s*(and start over|and start anew|and begin afresh|and start from scratch)?/
+        $ipv4 = /\b(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\b/
+        $ipv6 = /\b([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}\b/
+
     condition:
-        $bypass_phrase
+        any of them
 }

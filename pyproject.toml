@@ -26,6 +26,7 @@ classifiers = [
 
 # Core dependencies (always installed)
 dependencies = [
+    "click>=8.0.0",
     "scikit-learn>=1.2.0",
     "joblib>=1.5.0",
     "yara-python>=4.3.0",
