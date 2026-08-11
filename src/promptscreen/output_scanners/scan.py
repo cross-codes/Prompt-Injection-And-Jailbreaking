@@ -35,6 +35,7 @@ class OutputScanner:
         rej_logits = rej_output.logits
         rej_pred = torch.argmax(rej_logits, dim=1).item()
 
+        # protectai/distilroberta-base-rejection-v1 id2label: 0=NORMAL, 1=REJECTION
         if rej_pred == 1:
             return "Warning: Output rejected due to unsafe or disallowed content."
 
@@ -50,6 +51,9 @@ class OutputScanner:
         bias_logits = bias_output.logits
         bias_pred = torch.argmax(bias_logits, dim=1).item()
 
+        # valurank/distilroberta-bias id2label: 0=BIASED, 1=NEUTRAL (inverted
+        # relative to the rejection model above -- verified against the
+        # model's config.json, this is intentional, not an off-by-one bug)
         if bias_pred == 0:
             return "Warning: Output detected with potential bias."
 

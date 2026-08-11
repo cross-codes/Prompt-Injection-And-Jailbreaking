@@ -63,6 +63,15 @@ def length_complexity_features(texts: list[str]) -> np.ndarray:
 
 
 class JailbreakInferenceAPI(AbstractDefence):
+    """SVM-based jailbreak classifier loaded from a directory of joblib artifacts.
+
+    Security note: ``joblib.load`` deserializes via pickle and will execute
+    arbitrary code embedded in a malicious artifact. Only point ``model_dir``
+    at artifacts you trust (e.g. the bundled ``model_artifacts/`` or your own
+    training output) -- never at a directory populated from an untrusted or
+    user-controlled source.
+    """
+
     def __init__(self, model_dir: str):
         model_path = Path(model_dir) / "linear_svm_model.joblib"
         feature_union_path = Path(model_dir) / "feature_union.joblib"
@@ -72,6 +81,8 @@ class JailbreakInferenceAPI(AbstractDefence):
                 f"Model or feature_union not found in '{model_dir}'. Please run the enhanced training script first."
             )
 
+        # joblib.load executes arbitrary code on deserialization (it's pickle
+        # underneath) -- see class docstring.
         self.model = joblib.load(model_path)
         self.feature_union = joblib.load(feature_union_path)
         self.preprocessor = TextPreProcessor()
