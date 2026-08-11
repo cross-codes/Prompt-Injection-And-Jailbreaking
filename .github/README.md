@@ -77,6 +77,12 @@ PromptScreen ships with 11 guards across two tiers. All core guards require no e
 | `cluster`     | `ClassifierCluster`       | `pip install promptscreen[ml]`            | Dual ML models — toxicity + jailbreak                            |
 | `shieldgemma` | `ShieldGemma2BClassifier` | `pip install promptscreen[ml]` + HF token | Google's ShieldGemma 2B safety classifier                        |
 
+> **`vectordb` ships bring-your-own-data.** The CLI's `vectordb` guard creates an
+> *empty* Chroma collection by default — out of the box it has nothing to compare
+> against and will never block anything. Populate it yourself with
+> `VectorDB.add_texts(texts, metadatas)` (see `VectorDB` in
+> `promptscreen.defence`) before relying on it.
+
 ---
 
 ## Usage Examples

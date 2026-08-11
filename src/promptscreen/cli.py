@@ -484,7 +484,9 @@ def info(guard_name: str) -> None:
         "vectordb": [
             "Similarity to known attacks",
             "Semantic understanding",
-            "Requires threat database",
+            "Bring-your-own-data: the CLI factory creates an EMPTY collection "
+            "by default -- populate it via VectorDB.add_texts() before this "
+            "guard can block anything",
         ],
         "cluster": [
             "Toxicity detection",
