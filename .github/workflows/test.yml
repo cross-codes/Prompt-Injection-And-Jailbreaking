@@ -36,6 +36,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
+      - name: Cache NLTK data
+        uses: actions/cache@v3
+        with:
+          path: ~/nltk_data
+          key: ${{ runner.os }}-nltk-stopwords-wordnet-punkt-tagger-v1
+
+      - name: Download NLTK data
+        run: |
+          python -m nltk.downloader stopwords wordnet punkt punkt_tab averaged_perceptron_tagger_eng
+
       - name: Lint check with ruff
         run: ruff check src/ tests/
 

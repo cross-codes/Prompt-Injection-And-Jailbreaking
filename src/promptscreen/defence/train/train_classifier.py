@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Optional
 
 import joblib
-import nltk
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import classification_report
@@ -15,13 +14,10 @@ from sklearn.svm import LinearSVC
 
 # Re-exported for pickle back-compat -- see text_features.py's module docstring.
 from ...utils.text_features import length_complexity_features  # noqa: F401
-from ...utils.text_preprocessor import TextPreProcessor
 
-_ = nltk.download("wordnet", quiet=True)
-_ = nltk.download("stopwords", quiet=True)
-_ = nltk.download("averaged_perceptron_tagger_eng", quiet=True)
-_ = nltk.download("punkt", quiet=True)
-_ = nltk.download("punkt_tab", quiet=True)
+# Importing TextPreProcessor also downloads the NLTK corpora it needs (see
+# its module for the resource list) -- no separate nltk.download() here.
+from ...utils.text_preprocessor import TextPreProcessor
 
 logger = logging.getLogger(__name__)
 
