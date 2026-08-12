@@ -77,6 +77,12 @@ PromptScreen ships with 11 guards across two tiers. All core guards require no e
 | `cluster`     | `ClassifierCluster`       | `pip install promptscreen[ml]`            | Dual ML models — toxicity + jailbreak                            |
 | `shieldgemma` | `ShieldGemma2BClassifier` | `pip install promptscreen[ml]` + HF token | Google's ShieldGemma 2B safety classifier                        |
 
+> **`vectordb` ships bring-your-own-data.** The CLI's `vectordb` guard creates an
+> *empty* Chroma collection by default — out of the box it has nothing to compare
+> against and will never block anything. Populate it yourself with
+> `VectorDB.add_texts(texts, metadatas)` (see `VectorDB` in
+> `promptscreen.defence`) before relying on it.
+
 ---
 
 ## Usage Examples
@@ -133,6 +139,26 @@ Response (early-stops at the first blocking guard, all evaluated guards are retu
   }
 }
 ```
+
+### Hardening the API server
+
+`create_app()` is unauthenticated with no CORS policy by default -- fine for
+local/dev use, not for exposing beyond localhost. Pass these to lock it down:
+
+```python
+from promptscreen.api import create_app
+
+app = create_app(
+    guards,
+    api_key="your-secret-key",          # requires a matching X-API-Key header
+    allowed_origins=["https://your-app.example.com"],  # enables CORS
+    max_body_bytes=1_000_000,           # 413s oversized requests before parsing (default 1 MB)
+)
+```
+
+`examples/run_api.py` reads the API key from the `PROMPTSCREEN_API_KEY`
+environment variable and warns if you bind to a non-localhost host without
+one set.
 
 ### New safety layer guards
 

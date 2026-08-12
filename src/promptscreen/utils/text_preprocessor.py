@@ -4,15 +4,35 @@ import string
 from typing import Optional, cast
 
 import emoji
+import nltk
 from nltk import pos_tag, word_tokenize
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
+
+from .unicode_normalize import normalize_for_model
+
+# Every corpus/model TextPreProcessor needs at runtime. Downloaded quietly
+# (no-op if already present) on import so any consumer -- tests, a fresh
+# `pip install`, CI -- works without the caller having to know NLTK setup
+# is required. quiet=True suppresses output but LookupError still surfaces
+# if a download genuinely fails (e.g. no network), same as before.
+for _nltk_resource in (
+    "stopwords",
+    "wordnet",
+    "punkt",
+    "punkt_tab",
+    "averaged_perceptron_tagger_eng",
+):
+    _ = nltk.download(_nltk_resource, quiet=True)
 
 
 class TextPreProcessor:
     """Normalises raw prompt text for ML classifiers.
 
     Steps applied:
+    0. Unicode normalization (undoes zero-width/tag/combining-mark
+       obfuscation so real words survive tokenization -- see
+       unicode_normalize.normalize_for_model)
     1. Lower-case
     2. Emoji demojization (e.g. 😀 → :grinning_face:)
     3. Punctuation removal
@@ -38,6 +58,7 @@ class TextPreProcessor:
         return cast(str, tag_dict.get(tag, wordnet.NOUN))
 
     def preprocess(self, text: str) -> str:
+        text = normalize_for_model(text)
         text = text.lower()
         text = emoji.demojize(text)
         text = text.translate(str.maketrans("", "", string.punctuation))

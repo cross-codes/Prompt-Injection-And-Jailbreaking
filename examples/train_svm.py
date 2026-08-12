@@ -1,9 +1,16 @@
 """Train SVM classifier for jailbreak detection."""
 
+import logging
+
 from promptscreen.defence.train import JailbreakClassifier
 
 
 def main():
+    # JailbreakClassifier.train() reports its classification_report via the
+    # logging module; without a configured handler, that output is silently
+    # dropped and training looks like it produced no report at all.
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
     print("Training SVM classifier...")
 
     # Paths

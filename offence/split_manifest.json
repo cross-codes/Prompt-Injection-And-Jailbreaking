@@ -1,0 +1,26 @@
+{
+  "seed": 42,
+  "shingle_size": 8,
+  "max_df": 20,
+  "test_frac": 0.07,
+  "input_path": "offence/dedup.json",
+  "input_rows": 30386,
+  "robustness_rows_excluded": 1387,
+  "main_pool_rows": 28999,
+  "train_rows": 26969,
+  "test_rows": 2030,
+  "train_class_counts": {
+    "jailbreak": 15591,
+    "benign": 9425,
+    "prompt-injection": 1953
+  },
+  "test_class_counts": {
+    "jailbreak": 1172,
+    "benign": 711,
+    "prompt-injection": 147
+  },
+  "num_groups": 16909,
+  "largest_group": 3014,
+  "rows_in_multi_member_groups": 13333,
+  "leakage_any_shingle": 0.08620689655172414
+}

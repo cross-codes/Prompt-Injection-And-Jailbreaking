@@ -77,3 +77,24 @@ class TestJailbreakInferenceAPI:
         result2 = guard.analyse("test prompt")
         # Results should be similar (both safe or both unsafe)
         assert result1.get_verdict() == result2.get_verdict()
+
+    def test_zero_width_obfuscation_does_not_bypass_content_analysis(self, guard):
+        """Regression test: a benign prompt obfuscated with zero-width
+        characters between every letter must not be judged differently
+        from its plain form. Before the preprocessing fix, ANY
+        zero-width-obfuscated prompt (benign or malicious) collapsed to an
+        empty feature vector and was blocked with an identical, content-
+        independent confidence score."""
+        benign_prompts = [
+            "What is the weather like today",
+            "Can you help me write a poem about flowers",
+            "Explain how photosynthesis works",
+        ]
+        zwsp = chr(0x200B)
+        for prompt in benign_prompts:
+            obfuscated = zwsp.join(prompt)
+            plain_result = guard.analyse(prompt)
+            obfuscated_result = guard.analyse(obfuscated)
+            assert (
+                obfuscated_result.get_verdict() == plain_result.get_verdict()
+            ), f"Zero-width obfuscation changed the verdict for: {prompt!r}"
